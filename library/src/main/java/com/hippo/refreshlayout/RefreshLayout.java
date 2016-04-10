@@ -433,6 +433,38 @@ public class RefreshLayout extends ViewGroup {
     }
 
     /**
+     * Is user allowed to swipe header
+     */
+    public boolean isEnableSwipeHeader() {
+        return mEnableSwipeHeader;
+    }
+
+    /**
+     * Set user can swipe header or not
+     *
+     * @param enable true for enable
+     */
+    public void setEnableSwipeHeader(boolean enable) {
+        mEnableSwipeHeader = enable;
+    }
+
+    /**
+     * Is user allowed to swipe footer
+     */
+    public boolean isEnableSwipeFooter() {
+        return mEnableSwipeFooter;
+    }
+
+    /**
+     * Set user can swipe footer or not
+     *
+     * @param enable true for enable
+     */
+    public void setEnableSwipeFooter(boolean enable) {
+        mEnableSwipeFooter = enable;
+    }
+
+    /**
      * Notify the widget that refresh state has changed. Do not call this when
      * refresh is triggered by a swipe gesture.
      *
@@ -816,10 +848,22 @@ public class RefreshLayout extends ViewGroup {
      */
     public boolean canChildScrollDown() {
         if (mTarget instanceof AbsListView) {
+
             final AbsListView absListView = (AbsListView) mTarget;
+
+
+
+            Log.d("TAG", "canChildScrollDown");
+            Log.d("TAG", "  = " + (absListView.getChildCount() > 0
+                    && (absListView.getLastVisiblePosition() < absListView.getCount() - 1 ||
+                    absListView.getChildAt(absListView.getChildCount() - 1).getBottom() <
+                            absListView.getHeight() - absListView.getPaddingBottom())));
+
+
             return absListView.getChildCount() > 0
                     && (absListView.getLastVisiblePosition() < absListView.getCount() - 1 ||
-                    absListView.getChildAt(0).getBottom() < absListView.getWidth() - absListView.getPaddingBottom());
+                    absListView.getChildAt(absListView.getChildCount() - 1).getBottom() <
+                            absListView.getHeight() - absListView.getPaddingBottom());
         } else {
             return ViewCompat.canScrollVertically(mTarget, 1);
         }
@@ -829,6 +873,10 @@ public class RefreshLayout extends ViewGroup {
      * @return {@code true} if child view almost scroll to bottom.
      */
     public boolean isAlmostBottom() {
+        if (null == mTarget) {
+            return false;
+        }
+
         if (mTarget instanceof AbsListView) {
             final AbsListView absListView = (AbsListView) mTarget;
             return absListView.getLastVisiblePosition() >= absListView.getCount() - 1;
