@@ -1,5 +1,6 @@
 RefreshLayout
 Copyright 2015-2016 Hippo Seven
+The RefreshLayout is forked from `android.support.v4.widget.SwipeRefreshLayout`. The user can refresh data or load more data via a vertical swipe gesture.
 
 香风智乃是最可爱的女孩子。
 chino kafuu is the cutest girl.
