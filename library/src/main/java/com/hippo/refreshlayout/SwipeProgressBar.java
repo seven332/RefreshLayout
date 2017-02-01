@@ -42,13 +42,13 @@ final class SwipeProgressBar {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2;
 
     // Default progress animation colors are grays.
-    private final static int COLOR1 = 0xB3000000;
-    private final static int COLOR2 = 0x80000000;
-    private final static int COLOR3 = 0x4d000000;
-    private final static int COLOR4 = 0x1a000000;
+    private static final int COLOR1 = 0xB3000000;
+    private static final int COLOR2 = 0x80000000;
+    private static final int COLOR3 = 0x4d000000;
+    private static final int COLOR4 = 0x1a000000;
 
-    // The duration of the animation cycle.
-    private static final int ANIMATION_DURATION_MS = 2000;
+    // The duration per color of the animation cycle.
+    private static final int ANIMATION_DURATION_MS_PER_COLOR = 500;
 
     // The duration of the animation to clear the bar.
     private static final int FINISH_ANIMATION_DURATION_MS = 1000;
@@ -64,20 +64,15 @@ final class SwipeProgressBar {
     private boolean mRunning;
 
     // Colors used when rendering the animation,
-    private int mColor1;
-    private int mColor2;
-    private int mColor3;
-    private int mColor4;
-    private final View mParent;
+    private int[] mColors;
+    private int mAnimationDuration;
+    private View mParent;
 
-    private final Rect mBounds = new Rect();
+    private Rect mBounds = new Rect();
 
-    public SwipeProgressBar(View parent) {
+    SwipeProgressBar(View parent) {
         mParent = parent;
-        mColor1 = COLOR1;
-        mColor2 = COLOR2;
-        mColor3 = COLOR3;
-        mColor4 = COLOR4;
+        setColorScheme(COLOR1, COLOR2, COLOR3, COLOR4);
     }
 
     /**
@@ -85,16 +80,14 @@ final class SwipeProgressBar {
      * also be the color of the bar that grows in response to a user swipe
      * gesture.
      *
-     * @param color1 Integer representation of a color.
-     * @param color2 Integer representation of a color.
-     * @param color3 Integer representation of a color.
-     * @param color4 Integer representation of a color.
+     * @param colors the colors for scheme
      */
-    void setColorScheme(int color1, int color2, int color3, int color4) {
-        mColor1 = color1;
-        mColor2 = color2;
-        mColor3 = color3;
-        mColor4 = color4;
+    void setColorScheme(int... colors) {
+        if (colors == null || colors.length <= 0) {
+            throw new IllegalStateException("colors == null || colors.length <= 0");
+        }
+        mColors = colors;
+        mAnimationDuration = colors.length * ANIMATION_DURATION_MS_PER_COLOR;
     }
 
     /**
@@ -153,6 +146,7 @@ final class SwipeProgressBar {
         final int width = bounds.width();
         final int cx = bounds.centerX();
         final int cy = bounds.centerY();
+        final int colors = mColors.length;
         boolean drawTriggerWhileFinishing = false;
         boolean drawAgain = false;
         int restoreCount = canvas.save();
@@ -160,15 +154,15 @@ final class SwipeProgressBar {
 
         if (mRunning || (mFinishTime > 0)) {
             long now = AnimationUtils.currentAnimationTimeMillis();
-            long elapsed = (now - mStartTime) % ANIMATION_DURATION_MS;
-            long iterations = (now - mStartTime) / ANIMATION_DURATION_MS;
-            float rawProgress = (elapsed / (ANIMATION_DURATION_MS / 100f));
+            long elapsed = (now - mStartTime) % mAnimationDuration;
+            long iterations = (now - mStartTime) / mAnimationDuration;
+            float rawProgress = (elapsed / (mAnimationDuration / (float) colors));
 
             // If we're not running anymore, that means we're running through
             // the finish animation.
             if (!mRunning) {
                 // If the finish animation is done, don't draw anything, and
-                // don't re-post.
+                // don't repost.
                 if ((now - mFinishTime) >= FINISH_ANIMATION_DURATION_MS) {
                     mFinishTime = 0;
                     return false;
@@ -205,16 +199,19 @@ final class SwipeProgressBar {
 
             // First fill in with the last color that would have finished drawing.
             if (iterations == 0) {
-                canvas.drawColor(mColor1);
+                canvas.drawColor(mColors[0]);
             } else {
-                if (rawProgress >= 0 && rawProgress < 25) {
-                    canvas.drawColor(mColor4);
-                } else if (rawProgress >= 25 && rawProgress < 50) {
-                    canvas.drawColor(mColor1);
-                } else if (rawProgress >= 50 && rawProgress < 75) {
-                    canvas.drawColor(mColor2);
-                } else {
-                    canvas.drawColor(mColor3);
+                int index = colors - 1;
+                float left = 0.0f;
+                float right = 1.0f;
+                for (int i = 0; i < colors; ++i) {
+                    if ((rawProgress >= left && rawProgress < right) || i == colors - 1) {
+                        canvas.drawColor(mColors[index]);
+                        break;
+                    }
+                    index = (index + 1) % colors;
+                    left += 1.0f;
+                    right += 1.0f;
                 }
             }
 
@@ -224,25 +221,25 @@ final class SwipeProgressBar {
             // progress 25-75 draw mColor3
             // progress 50-100 draw mColor4
             // progress 75 (wrap to 25) draw mColor1
-            if ((rawProgress >= 0 && rawProgress <= 25)) {
-                float pct = (((rawProgress + 25) * 2) / 100f);
-                drawCircle(canvas, cx, cy, mColor1, pct);
-            }
-            if (rawProgress >= 0 && rawProgress <= 50) {
-                float pct = ((rawProgress * 2) / 100f);
-                drawCircle(canvas, cx, cy, mColor2, pct);
-            }
-            if (rawProgress >= 25 && rawProgress <= 75) {
-                float pct = (((rawProgress - 25) * 2) / 100f);
-                drawCircle(canvas, cx, cy, mColor3, pct);
-            }
-            if (rawProgress >= 50 && rawProgress <= 100) {
-                float pct = (((rawProgress - 50) * 2) / 100f);
-                drawCircle(canvas, cx, cy, mColor4, pct);
-            }
-            if ((rawProgress >= 75 && rawProgress <= 100)) {
-                float pct = (((rawProgress - 75) * 2) / 100f);
-                drawCircle(canvas, cx, cy, mColor1, pct);
+            if (colors > 1) {
+                if ((rawProgress >= 0.0f && rawProgress <= 1.0f)) {
+                    float pct = (rawProgress + 1.0f) / 2;
+                    drawCircle(canvas, cx, cy, mColors[0], pct);
+                }
+                float left = 0.0f;
+                float right = 2.0f;
+                for (int i = 1; i < colors; ++i) {
+                    if (rawProgress >= left && rawProgress <= right) {
+                        float pct = (rawProgress - i + 1.0f) / 2;
+                        drawCircle(canvas, cx, cy, mColors[i], pct);
+                    }
+                    left += 1.0f;
+                    right += 1.0f;
+                }
+                if ((rawProgress >= colors - 1.0f && rawProgress <= colors)) {
+                    float pct = (rawProgress - colors + 1.0f) / 2;
+                    drawCircle(canvas, cx, cy, mColors[0], pct);
+                }
             }
             if (mTriggerPercentage > 0 && drawTriggerWhileFinishing) {
                 // There is some portion of trigger to draw. Restore the canvas,
@@ -268,7 +265,7 @@ final class SwipeProgressBar {
     }
 
     private void drawTrigger(Canvas canvas, int cx, int cy) {
-        mPaint.setColor(mColor1);
+        mPaint.setColor(mColors[0]);
         canvas.drawCircle(cx, cy, cx * mTriggerPercentage, mPaint);
     }
 

@@ -666,28 +666,27 @@ public class RefreshLayout extends ViewGroup {
     }
 
     /**
-     * Set the four colors used in the progress animation from color resources.
+     * Set the colors used in the progress animation from color resources.
      * The first color will also be the color of the bar that grows in response
      * to a user swipe gesture.
      */
-    public void setFooterColorSchemeResources(int colorRes1, int colorRes2, int colorRes3,
-            int colorRes4) {
+    public void setFooterColorSchemeResources(int... colorResIds) {
         final Context context = getContext();
-        setFooterColorSchemeColors(
-                ContextCompat.getColor(context, colorRes1),
-                ContextCompat.getColor(context, colorRes2),
-                ContextCompat.getColor(context, colorRes3),
-                ContextCompat.getColor(context, colorRes4));
+        int[] colorRes = new int[colorResIds.length];
+        for (int i = 0; i < colorResIds.length; i++) {
+            colorRes[i] = ContextCompat.getColor(context, colorResIds[i]);
+        }
+        setFooterColorSchemeColors(colorRes);
     }
 
     /**
-     * Set the four colors used in the progress animation. The first color will
+     * Set the colors used in the progress animation. The first color will
      * also be the color of the bar that grows in response to a user swipe
      * gesture.
      */
-    public void setFooterColorSchemeColors(int color1, int color2, int color3, int color4) {
+    public void setFooterColorSchemeColors(int... colors) {
         ensureTarget();
-        mProgressBar.setColorScheme(color1, color2, color3, color4);
+        mProgressBar.setColorScheme(colors);
     }
 
     /**
