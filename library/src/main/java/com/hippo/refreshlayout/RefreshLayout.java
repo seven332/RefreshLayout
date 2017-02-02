@@ -1686,7 +1686,7 @@ public class RefreshLayout extends ViewGroup {
      * Simple AnimationListener to avoid having to implement unneeded methods in
      * AnimationListeners.
      */
-    private class BaseAnimationListener implements AnimationListener {
+    private static class BaseAnimationListener implements AnimationListener {
         @Override
         public void onAnimationStart(Animation animation) {
         }
