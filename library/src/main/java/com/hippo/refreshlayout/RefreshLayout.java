@@ -1035,12 +1035,19 @@ public class RefreshLayout extends ViewGroup {
     }
 
     private boolean footerInterceptTouchEvent(MotionEvent ev) {
+        int pointerIndex;
         final int action = MotionEventCompat.getActionMasked(ev);
         switch (action) {
             case MotionEvent.ACTION_DOWN:
                 mActivePointerId = ev.getPointerId(0);
                 mIsFooterBeingDragged = false;
                 mFooterCurrPercentage = 0;
+
+                pointerIndex = ev.findPointerIndex(mActivePointerId);
+                if (pointerIndex < 0) {
+                    return false;
+                }
+                mInitialDownY = ev.getY(pointerIndex);
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -1049,16 +1056,17 @@ public class RefreshLayout extends ViewGroup {
                     return false;
                 }
 
-                final int pointerIndex = ev.findPointerIndex(mActivePointerId);
+                pointerIndex = ev.findPointerIndex(mActivePointerId);
                 if (pointerIndex < 0) {
                     Log.e(LOG_TAG, "Got ACTION_MOVE event but have an invalid active pointer id.");
                     return false;
                 }
 
                 final float y = ev.getY(pointerIndex);
-                final float yDiff = y - mInitialMotionY;
+                final float yDiff = y - mInitialDownY;
                 if (yDiff < -mTouchSlop) {
                     mIsFooterBeingDragged = true;
+                    mInitialMotionY = mInitialDownY - mTouchSlop;
                 }
                 break;
 
@@ -1468,13 +1476,16 @@ public class RefreshLayout extends ViewGroup {
                 }
 
                 y = ev.getY(pointerIndex);
-                yDiff = y - mInitialMotionY;
-
-                if (!mIsFooterBeingDragged && yDiff < -mTouchSlop) {
-                    mIsFooterBeingDragged = true;
+                if (!mIsFooterBeingDragged) {
+                    yDiff = y - mInitialDownY;
+                    if (yDiff < -mTouchSlop) {
+                        mIsFooterBeingDragged = true;
+                        mInitialMotionY = mInitialDownY - mTouchSlop;
+                    }
                 }
 
                 if (mIsFooterBeingDragged) {
+                    yDiff = y - mInitialMotionY;
                     setTriggerPercentage(
                             mAccelerateInterpolator.getInterpolation(
                                     MathUtils.clamp(-yDiff, 0, mFooterDistanceToTriggerSync) / mFooterDistanceToTriggerSync));
