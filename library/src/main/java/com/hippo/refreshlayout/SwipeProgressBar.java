@@ -155,7 +155,7 @@ final class SwipeProgressBar {
         if (mRunning || (mFinishTime > 0)) {
             long now = AnimationUtils.currentAnimationTimeMillis();
             long elapsed = (now - mStartTime) % mAnimationDuration;
-            long iterations = (now - mStartTime) / mAnimationDuration;
+            long iterations = (now - mStartTime) / ANIMATION_DURATION_MS_PER_COLOR;
             float rawProgress = (elapsed / (mAnimationDuration / (float) colors));
 
             // If we're not running anymore, that means we're running through
