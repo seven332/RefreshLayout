@@ -842,10 +842,11 @@ public class RefreshLayout extends ViewGroup {
             return;
         }
         final View child = mTarget;
-        final int childLeft = getPaddingLeft();
-        final int childTop = getPaddingTop();
-        final int childWidth = width - getPaddingLeft() - getPaddingRight();
-        final int childHeight = height - getPaddingTop() - getPaddingBottom();
+        final MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
+        final int childLeft = getPaddingLeft() + lp.leftMargin;
+        final int childTop = getPaddingTop() + lp.topMargin;
+        final int childWidth = width - getPaddingLeft() - getPaddingRight() - lp.leftMargin - lp.rightMargin;
+        final int childHeight = height - getPaddingTop() - getPaddingBottom() - lp.topMargin - lp.bottomMargin;
         child.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight);
         int circleWidth = mCircleView.getMeasuredWidth();
         int circleHeight = mCircleView.getMeasuredHeight();
@@ -863,10 +864,10 @@ public class RefreshLayout extends ViewGroup {
         if (mTarget == null) {
             return;
         }
-        mTarget.measure(MeasureSpec.makeMeasureSpec(
-                getMeasuredWidth() - getPaddingLeft() - getPaddingRight(),
-                MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(
-                getMeasuredHeight() - getPaddingTop() - getPaddingBottom(), MeasureSpec.EXACTLY));
+        final MarginLayoutParams lp = (MarginLayoutParams) mTarget.getLayoutParams();
+        mTarget.measure(
+                MeasureSpec.makeMeasureSpec(getMeasuredWidth() - getPaddingLeft() - getPaddingRight() - lp.leftMargin - lp.rightMargin, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(getMeasuredHeight() - getPaddingTop() - getPaddingBottom() - lp.topMargin - lp.bottomMargin, MeasureSpec.EXACTLY));
         mCircleView.measure(MeasureSpec.makeMeasureSpec(mCircleDiameter, MeasureSpec.EXACTLY),
                 MeasureSpec.makeMeasureSpec(mCircleDiameter, MeasureSpec.EXACTLY));
         mCircleViewIndex = -1;
@@ -1652,6 +1653,30 @@ public class RefreshLayout extends ViewGroup {
             // active pointer and adjust accordingly.
             final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
             mActivePointerId = ev.getPointerId(newPointerIndex);
+        }
+    }
+
+    @Override
+    protected LayoutParams generateDefaultLayoutParams() {
+        return new MarginLayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+    }
+
+    @Override
+    public LayoutParams generateLayoutParams(AttributeSet attrs) {
+        return new MarginLayoutParams(getContext(), attrs);
+    }
+
+    @Override
+    protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
+        return p instanceof MarginLayoutParams;
+    }
+
+    @Override
+    protected ViewGroup.LayoutParams generateLayoutParams(ViewGroup.LayoutParams lp) {
+        if (lp instanceof MarginLayoutParams) {
+            return new MarginLayoutParams((MarginLayoutParams) lp);
+        } else {
+            return new MarginLayoutParams(lp);
         }
     }
 
